@@ -1,6 +1,11 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+
 from env import user, password, host
 
 
@@ -22,7 +27,15 @@ def get_zillow():
     filename = 'zillow_2017.csv'
 
     if os.path.isfile(filename):
-        return pd.read_csv(filename)
+        df = pd.read_csv(filename)
+        df = df.rename(columns = {'bedroomcnt':'bedrooms', 
+                      'bathroomcnt':'bathrooms', 
+                      'calculatedfinishedsquarefeet':'area',
+                      'taxvaluedollarcnt':'tax_value', 
+                      'yearbuilt':'year_built',
+                      'taxamount':'tax_amount'})
+        df = df.drop(columns="Unnamed: 0")
+        return df
     else:
         df = pd.read_sql('''SELECT bedroomcnt, 
         bathroomcnt, 
@@ -37,6 +50,13 @@ def get_zillow():
         WHERE propertylandusedesc = "Single Family Residential";
         ''', get_url('zillow'))
         df.to_csv(filename)
+        df = df.rename(columns = {'bedroomcnt':'bedrooms', 
+                      'bathroomcnt':'bathrooms', 
+                      'calculatedfinishedsquarefeet':'area',
+                      'taxvaluedollarcnt':'tax_value', 
+                      'yearbuilt':'year_built',
+                      'taxamount':'tax_amount'})
+        df = df.drop(columns="Unnamed: 0")
         return df
 
 
@@ -65,7 +85,16 @@ def get_zillow_inferred():
         WHERE propertylandusedesc = "Single Family Residential", "Inferred Single Family Residential";
         ''', get_url('zillow'))
         df.to_csv(filename)
-        return df
+    
+    df = df.rename(columns = {'bedroomcnt':'bedrooms', 
+                          'bathroomcnt':'bathrooms', 
+                          'calculatedfinishedsquarefeet':'area',
+                          'taxvaluedollarcnt':'tax_value', 
+                          'yearbuilt':'year_built',
+                          'taxamount':'tax_amount'})
+    df = df.drop(columns="Unnamed: 0")
+    
+    return df
 
 
 def wrangle_grades():
@@ -101,3 +130,90 @@ def remove_outliers(df, k, col_list):
         # return dataframe without outliers
         df = df[(df[col] > lower_bound) & (df[col] < upper_bound)]
     return df
+
+
+def hist_plot(df):
+    '''
+    Plots Histograms for columns in input df, all but 'fips' and, 'year_built' as they're categorical not a
+    ctually numbers.
+    '''
+    plt.figure(figsize=(16, 3))
+
+    cols = [col for col in df.columns if col not in ['fips', 'year_built']]
+
+    for i, col in enumerate(cols):
+
+        # i starts at 0, but plot nos should start at 1 <-- Good to note
+        plot_number = i + 1 
+        plt.subplot(1, len(cols), plot_number)
+        plt.title(col)
+        df[col].hist(bins=5)
+        # We're looking for shape not actual details, so these two are set to 'off'
+        plt.grid(False)
+        plt.ticklabel_format(useOffset=False)
+        # mitigate overlap: This is handy. Thank you.
+        plt.tight_layout()
+
+    plt.show()
+
+def box_plot(df):
+    ''' Plots Boxplots of bedrooms, bathrooms, area, tax_value, and tax_amount'''
+    
+    # List of columns
+    cols = ['bedrooms', 'bathrooms', 'area', 'tax_value', 'tax_amount']
+
+    plt.figure(figsize=(16, 3))
+
+    for i, col in enumerate(cols):
+        plot_number = i + 1 
+        plt.subplot(1, len(cols), plot_number)
+        plt.title(col)
+        sns.boxplot(data=df[[col]])
+        plt.grid(False)
+        plt.tight_layout()
+
+    plt.show()
+
+# -----------------------Full Defs-------------------------
+
+# Having this section with the full cleaning is such a great idea for the project,
+# Clean, organise, and everything with as few lines as possible.
+
+def prepare_zillow(df):
+    ''' Prepare zillow data for exploration'''
+
+    # removing outliers
+    df = remove_outliers(df, 1.5, ['bedrooms', 'bathrooms', 'area', 'tax_value', 'tax_amount'])
+    
+    # getting distributions for numeric data
+    hist_plot(df)
+    box_plot(df)
+    
+    # converting column datatypes
+    df.fips = df.fips.astype(str)
+    df.year_built = df.year_built.astype(str)
+    
+    # train/validate/test split
+    train_validate, test = train_test_split(df, test_size=.2, random_state=123)
+    train, validate = train_test_split(train_validate, test_size=.3, random_state=123)
+    
+    # impute year built using median (If the teacher is willing to, then it -should- be okay?)
+    imputer = SimpleImputer(strategy='median')
+
+    imputer.fit(train[['year_built']])
+
+    train[['year_built']] = imputer.transform(train[['year_built']])
+    validate[['year_built']] = imputer.transform(validate[['year_built']])
+    test[['year_built']] = imputer.transform(test[['year_built']])       
+    
+    return train, validate, test 
+
+
+# -------------------------------- One Liner -------------------------
+
+# The paydirt?!
+def wrangle_zillow():
+    '''Acquire and prepare data from Zillow database for explore using acquire and prepare functions above.'''
+    train, validate, test = prepare_zillow(get_zillow())
+    
+    return train, validate, test

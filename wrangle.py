@@ -86,22 +86,18 @@ def wrangle_grades():
     return df
 
 
-    def remove_outliers(df, k, col_list):
-        ''' remove outliers from a list of columns in a dataframe 
-        and return that dataframe
-        '''
-    
-        for col in col_list:
+def remove_outliers(df, k, col_list):
+    ''' 
+    remove outliers from a list of columns in a dataframe 
+    and return that dataframe.
 
-            q1, q3 = df[col].quantile([.25, .75])  # get quartiles
-        
-            iqr = q3 - q1   # calculate interquartile range
-        
-            upper_bound = q3 + k * iqr   # get upper bound
-            lower_bound = q1 - k * iqr   # get lower bound
+    '''
+    for col in col_list:
+        q1, q3 = df[col].quantile([.25, .75])  # get quartiles
+        iqr = q3 - q1   # calculate interquartile range
 
-            # return dataframe without outliers
-        
-            df = df[(df[col] > lower_bound) & (df[col] < upper_bound)]
-        
-        return df
+        upper_bound = q3 + k * iqr   # get upper bound
+        lower_bound = q1 - k * iqr   # get lower bound
+        # return dataframe without outliers
+        df = df[(df[col] > lower_bound) & (df[col] < upper_bound)]
+    return df

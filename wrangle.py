@@ -35,6 +35,8 @@ def get_zillow():
                       'yearbuilt':'year_built',
                       'taxamount':'tax_amount'})
         df = df.drop(columns="Unnamed: 0")
+        df['bedrooms'] = df.bedrooms.astype(float)
+        df['year_built'] = df.year_built.astype(str)
         return df
     else:
         df = pd.read_sql('''SELECT bedroomcnt, 
@@ -57,6 +59,8 @@ def get_zillow():
                       'yearbuilt':'year_built',
                       'taxamount':'tax_amount'})
         df = df.drop(columns="Unnamed: 0")
+        df['bedrooms'] = df.bedrooms.astype(float)
+        df['year_built'] = df.year_built.astype(str)
         return df
 
 

@@ -6,12 +6,12 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler, Qu
 def scale_data(train, 
                validate, 
                test, 
-               scaler,
+               scaler = MinMaxScaler(),
                columns_to_scale=['bedrooms', 'bathrooms', 'tax_value']):
     '''
-    Scales a copy of train, validate, and test dataset. Please, feed me a scaler, Seymour.
+    Scales a copy of train, validate, and test dataset. Please, feed me a scaler, Seymour (default is MinMax).
     Takes train, validate, and test data, then splits and returns their scaled counterparts.
-    If return_scalar is True, the scaler object will be returned as well
+    default columns to scale are 'bedrooms', 'bathrooms' and, 'tax_value'
     '''
     train_scaled = train.copy()
     validate_scaled = validate.copy()
@@ -30,15 +30,15 @@ def scale_data(train,
     
     return train_scaled, validate_scaled, test_scaled
 
-def visualize_scaler(scaler,
-                     df,
+def visualize_scaler(df,
+                     scaler = MinMaxScaler(),
                      columns_to_scale=['bedrooms', 'bathrooms', 'tax_value'],
                      bins=10):
     '''
     Visualises data using the provided Scaler.
-    Takes in Scaler, Data Frame, columns being scaled (defaults to 'bedbrooms', 'bathrooms' and 'tax_value),
+    Takes in Data Frame, scaler (default = MinMax), columns being scaled (defaults to 'bedbrooms', 'bathrooms' and 'tax_value),
     and bin the data for visualisation (defaults to 10 bins).
-    Returns 
+    Returns histograms to show before and after scaler effects.
     '''
     fig, axs = plt.subplots(len(columns_to_scale), 2, figsize=(16,9))
     df_scaled = df.copy()

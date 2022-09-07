@@ -23,6 +23,7 @@ def get_zillow():
     Returns the zillow 2017 dataset, checks local disk for zillow_2017.csv, if present loads it,
     otherwise it pulls the bedroomcnt, bathroomcnt, calculatedfinishedsquarefeet, 
     taxvaluedollarcnt, yearbuilt, taxamount and, fips columns from the SQL.
+    Dropping all properties with 0 bedrooms (it's not really a house if you can't sleep in it.)
     '''
     filename = 'zillow_2017.csv'
 
@@ -34,9 +35,8 @@ def get_zillow():
                       'taxvaluedollarcnt':'tax_value', 
                       'yearbuilt':'year_built',
                       'taxamount':'tax_amount'})
+        df = df[df.bedrooms!=0]
         df = df.drop(columns="Unnamed: 0")
-        df['bedrooms'] = df.bedrooms.astype(float)
-        df['year_built'] = df.year_built.astype(str)
         return df
     else:
         df = pd.read_sql('''SELECT bedroomcnt, 
@@ -58,9 +58,8 @@ def get_zillow():
                       'taxvaluedollarcnt':'tax_value', 
                       'yearbuilt':'year_built',
                       'taxamount':'tax_amount'})
+        df = df[df.bedrooms!=0]
         df = df.drop(columns="Unnamed: 0")
-        df['bedrooms'] = df.bedrooms.astype(float)
-        df['year_built'] = df.year_built.astype(str)
         return df
 
 
@@ -194,8 +193,8 @@ def prepare_zillow(df):
     box_plot(df)
     
     # converting column datatypes
-    df.fips = df.fips.astype(str)
-    df.year_built = df.year_built.astype(str)
+    df['fips'] = df.fips.astype(str)
+    df['bedrooms'] = df.bedrooms.astype(float)
     
     # train/validate/test split
     train_validate, test = train_test_split(df, test_size=.2, random_state=123)
@@ -209,7 +208,11 @@ def prepare_zillow(df):
     train[['year_built']] = imputer.transform(train[['year_built']])
     validate[['year_built']] = imputer.transform(validate[['year_built']])
     test[['year_built']] = imputer.transform(test[['year_built']])       
-    
+
+    train['year_built'] = train.year_built.astype(str)
+    validate['year_built'] = validate.year_built.astype(str)
+    test['year_built'] = test.year_built.astype(str)
+
     return train, validate, test 
 
 
